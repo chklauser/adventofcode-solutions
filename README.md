@@ -1,2 +1,3 @@
-# adventofcode-solutions
-My solutions for Advent of Code
+# Solutions for Advent of Code
+My solutions for Advent of Code (Rust)
+

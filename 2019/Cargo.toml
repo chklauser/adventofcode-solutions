@@ -1,0 +1,14 @@
+[package]
+authors = ["Christian Klauser <christianklauser@outlook.com>"]
+edition = "2018"
+name = "adventofcode-solutions-2019"
+version = "0.1.0"
+[dependencies]
+aoc-runner = "0.2.2"
+aoc-runner-derive = "0.2.2"
+serde = "1.0.0"
+serde_derive = "1.0.0"
+serde_scan = "0.3.2"
+
+[lib]
+bench = false
