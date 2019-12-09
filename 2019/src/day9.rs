@@ -95,7 +95,9 @@ impl Op {
 struct Computer {
     memory: Vec<isize>,
     instruction_pointer: usize,
-    relative_base: usize
+    relative_base: usize,
+    instr_cycles: usize,
+    instr_yields: usize
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -126,7 +128,7 @@ impl Yield {
 
 impl Computer {
     fn new(memory: Vec<isize>) -> Computer {
-        Computer { memory, instruction_pointer: 0, relative_base: 0 }
+        Computer { memory, instruction_pointer: 0, relative_base: 0, instr_cycles: 0, instr_yields: 0 }
     }
 
     fn step<'a>(&mut self, op: &Op, input: Option<isize>) -> Yield {
@@ -161,12 +163,14 @@ impl Computer {
     }
     
     fn execute(&mut self, mut input: Option<isize>) -> Yield {
+        self.instr_yields += 1;
         loop {
             //eprintln!("MEM: {:?}", memory);
 
             // decode + advance instruction pointer
             let current_instruction_pointer = self.instruction_pointer;
             let op = Op::decode(&self.memory, &mut self.instruction_pointer);
+            self.instr_cycles += 1;
             //eprintln!(" OP: {:?}", op);
             if op == Op::Halt {
                 return Yield::Halt;
@@ -209,14 +213,18 @@ impl Computer {
 #[aoc(day9, part1)]
 pub fn part1(image: &Vec<isize>) -> isize {
     let mut output = Vec::new();
-    Computer::new(image.clone()).execute_stream(once(1), &mut output);
+    let mut computer = Computer::new(image.clone());
+    computer.execute_stream(once(1), &mut output);
+    eprintln!("STATS: cycles={}, yields={}", computer.instr_cycles, computer.instr_yields);
     output[0]
 }
 
 #[aoc(day9, part2)]
 pub fn part2(image: &Vec<isize>) -> isize {
     let mut output = Vec::new();
-    Computer::new(image.clone()).execute_stream(once(2), &mut output);
+    let mut computer = Computer::new(image.clone());
+    computer.execute_stream(once(2), &mut output);
+    eprintln!("STATS: cycles={}, yields={}", computer.instr_cycles, computer.instr_yields);
     output[0]
 }
 
