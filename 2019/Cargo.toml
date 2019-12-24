@@ -7,11 +7,17 @@ version = "0.1.0"
 aoc-runner = "0.2.2"
 aoc-runner-derive = "0.2.2"
 approx = "0.3.2"
+async-trait = "0.1.21"
+futures = "0.3.1"
 fxhash = "0.2.1"
 itertools = "0.8.2"
 serde = "1.0.0"
 serde_derive = "1.0.0"
 serde_scan = "0.3.2"
+
+[dependencies.async-std]
+features = ["unstable"]
+version = "1.4.0"
 
 [lib]
 bench = false

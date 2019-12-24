@@ -3,6 +3,7 @@ use std::fmt::Display;
 use serde::export::Formatter;
 use serde::export::fmt::Error;
 use itertools::Itertools;
+use crate::intcode::{InputDevice, OutputDevice};
 
 #[aoc_generator(day11)]
 pub fn generator(input: &str) -> Vec<isize> {
@@ -221,7 +222,15 @@ impl From<Color> for isize {
         }
     }
 }
-
+impl From<isize> for Color {
+    fn from(v: isize) -> Self {
+        match v {
+            0 => Color::Black,
+            1 => Color::White,
+            x => panic!("invalid color {}", x)
+        }
+    }
+}
 fn rotate_clockwise(v: Vector2) -> Vector2 {
     //                                v.0
     //                                v.1
@@ -242,7 +251,8 @@ fn rotate_counter_clockwise(v: Vector2) -> Vector2 {
 struct Hull {
     tiles: FxHashMap<Vector2, Color>,
     position: Vector2,
-    speed: Vector2
+    speed: Vector2,
+    state: RobotState
 }
 impl Hull {
     fn color_at(&self, position: &Vector2) -> Color {
@@ -280,7 +290,7 @@ impl Display for Hull {
 }
 impl Default for Hull {
     fn default() -> Self {
-        Hull { tiles: FxHashMap::default(), position: (0,0), speed: (0, -1) }
+        Hull { tiles: FxHashMap::default(), position: (0,0), speed: (0, -1), state: RobotState::WaitingForColor }
     }
 }
 impl Iterator for &Hull {
@@ -302,31 +312,30 @@ fn paint(program: &[isize]) -> Hull {
     hull
 }
 fn paint_with(computer: &mut Computer, hull: &mut Hull) {
-    let mut state = RobotState::WaitingForColor;
     loop {
-        match (computer.execute((&*hull).next()), state) {
+        match (computer.execute((&*hull).next()), hull.state) {
             (Yield::Halt, _) => return,
             (Yield::WaitForInput, _) => panic!("Input is always available."),
             (Yield::OutputReady(1), RobotState::WaitingForColor) => {
                 hull.tiles.insert(hull.position, Color::White);
-                state = RobotState::WaitingForDirection;
+                hull.state = RobotState::WaitingForDirection;
                 //eprintln!("painted white: \n{}", hull);
             },
             (Yield::OutputReady(0), RobotState::WaitingForColor) => {
                 hull.tiles.insert(hull.position, Color::Black);
-                state = RobotState::WaitingForDirection;
+                hull.state = RobotState::WaitingForDirection;
                 //eprintln!("painted black: \n{}", hull);
             },
             (Yield::OutputReady(1), RobotState::WaitingForDirection) => {
                 hull.speed = rotate_clockwise(hull.speed);
                 hull.position = add(&hull.position, &hull.speed);
-                state = RobotState::WaitingForColor;
+                hull.state = RobotState::WaitingForColor;
                 //eprintln!("turned + moved right: \n{}", hull);
             },
             (Yield::OutputReady(0), RobotState::WaitingForDirection) => {
                 hull.speed = rotate_counter_clockwise(hull.speed);
                 hull.position = add(&hull.position, &hull.speed);
-                state = RobotState::WaitingForColor;
+                hull.state = RobotState::WaitingForColor;
                 //eprintln!("turned + moved left: \n{}", hull);
             },
             (Yield::Continue(_),_) => {},
@@ -334,10 +343,55 @@ fn paint_with(computer: &mut Computer, hull: &mut Hull) {
         }
     }
 }
+async fn paint_async(program: &[isize], initial_color: Color) -> Hull {
+    let mut computer = crate::intcode::Computer::new(Vec::from(program));
+    let mut hull = Hull::default();
+    if initial_color != Color::Black {
+        hull.tiles.insert((0,0), initial_color);
+    }
+
+    computer.execute(&mut hull).await;
+
+    hull
+}
+
+#[async_trait]
+impl InputDevice for Hull {
+    async fn input(&mut self) -> isize {
+        isize::from(self.color_at(&self.position))
+    }
+}
+#[async_trait]
+impl OutputDevice for Hull {
+    async fn output(&mut self, value: isize) -> () {
+        match self.state {
+            RobotState::WaitingForColor => {
+                self.tiles.insert(self.position, Color::from(value));
+                self.state = RobotState::WaitingForDirection;
+            },
+            RobotState::WaitingForDirection => {
+                if value == 1 {
+                    self.speed = rotate_clockwise(self.speed);
+                } else {
+                    self.speed = rotate_counter_clockwise(self.speed);
+                }
+                self.position = add(&self.position, &self.speed);
+                self.state = RobotState::WaitingForColor;
+            }
+        }
+    }
+}
+
 
 #[aoc(day11, part1)]
 pub fn part1(input: &Vec<isize>) -> usize {
     let hull = paint(&input[..]);
+    hull.tiles.len()
+}
+
+#[aoc(day11, part1, async)]
+pub fn part1_async(input: &Vec<isize>) -> usize {
+    let hull = async_std::task::block_on(paint_async(&input[..], Color::Black));
     hull.tiles.len()
 }
 
@@ -347,7 +401,14 @@ pub fn part2(input: &Vec<isize>) -> usize {
     let mut hull = Hull::default();
     hull.tiles.insert((0,0), Color::White);
     paint_with(&mut computer, &mut hull);
-    println!("{}", hull);
+    //println!("{}", hull);
+    hull.tiles.len()
+}
+
+#[aoc(day11, part2, async)]
+pub fn part2_async(input: &Vec<isize>) -> usize {
+    let hull = async_std::task::block_on(paint_async(&input[..], Color::White));
+    //println!("{}", hull);
     hull.tiles.len()
 }
 

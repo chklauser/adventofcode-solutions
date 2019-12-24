@@ -1,6 +1,8 @@
 extern crate aoc_runner;
 #[macro_use]
 extern crate aoc_runner_derive;
+#[macro_use]
+extern crate async_trait;
 
 extern crate fxhash;
 extern crate itertools;
@@ -17,5 +19,7 @@ pub mod day8;
 pub mod day9;
 pub mod day10;
 pub mod day11;
+#[allow(unused)]
+mod intcode;
 
 aoc_lib! { year = 2019 }
