@@ -1,9 +1,9 @@
+#[allow(unused)]
 use async_std::{
     prelude::*,
     task,
     sync,
 };
-use std::future::Future;
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Eq, PartialEq)]
@@ -133,7 +133,6 @@ impl Computer {
                 //eprintln!("MEM: {:?}", memory);
 
                 // decode + advance instruction pointer
-                let current_instruction_pointer = self.instruction_pointer;
                 let op = Op::decode(&self.memory, &mut self.instruction_pointer);
                 self.instr_cycles += 1;
                 //eprintln!(" OP: {:?}", op);
@@ -221,22 +220,24 @@ impl<O> OutputDevice for OutputSpy<O> where O: OutputDevice + Send {
     }
 }
 
+pub(crate) type WireOutput = async_std::sync::Sender<isize>;
 #[async_trait]
-impl OutputDevice for async_std::sync::Sender<isize> {
+impl OutputDevice for WireOutput {
     async fn output(&mut self, value: isize) -> () {
         self.send(value).await
     }
 }
 
+pub(crate) type WireInput = async_std::sync::Receiver<isize>;
 #[async_trait]
-impl InputDevice for async_std::sync::Receiver<isize> {
+impl InputDevice for WireInput {
     async fn input(&mut self) -> isize {
         self.recv().await.expect("input over wire")
     }
 }
 
-pub(crate) fn wire() -> (impl InputDevice+Send+Clone, impl OutputDevice+Send+Clone) {
-    let (sender,receiver) = async_std::sync::channel::<isize>(1);
+pub(crate) fn wire(capacity: usize) -> (WireInput, WireOutput) {
+    let (sender,receiver) = async_std::sync::channel::<isize>(capacity);
     (receiver,sender)
 }
 

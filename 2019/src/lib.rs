@@ -3,6 +3,7 @@ extern crate aoc_runner;
 extern crate aoc_runner_derive;
 #[macro_use]
 extern crate async_trait;
+extern crate futures;
 
 extern crate fxhash;
 extern crate itertools;
@@ -15,6 +16,7 @@ pub mod day5;
 pub mod day6;
 pub mod day7;
 pub mod day7_part2;
+pub mod day7_part2_async;
 pub mod day8;
 pub mod day9;
 pub mod day10;
