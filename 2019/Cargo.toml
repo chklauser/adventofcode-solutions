@@ -4,20 +4,20 @@ edition = "2018"
 name = "adventofcode-solutions-2019"
 version = "0.1.0"
 [dependencies]
-aoc-runner = "0.2.2"
-aoc-runner-derive = "0.2.2"
+aoc-runner = "0.3.0"
+aoc-runner-derive = "0.3.0"
 approx = "0.3.2"
-async-trait = "0.1.21"
-futures = "0.3.1"
+async-trait = "0.1.24"
+futures = "0.3.4"
 fxhash = "0.2.1"
 itertools = "0.8.2"
-serde = "1.0.0"
-serde_derive = "1.0.0"
+serde = "1.0.104"
+serde_derive = "1.0.104"
 serde_scan = "0.3.2"
 
 [dependencies.async-std]
 features = ["unstable"]
-version = "1.4.0"
+version = "1.5.0"
 
 [lib]
 bench = false
