@@ -3,7 +3,7 @@ use std::fmt::Display;
 use serde::export::Formatter;
 use serde::export::fmt::Error;
 use itertools::Itertools;
-use crate::intcode::{InputDevice, OutputDevice};
+use crate::intcode::{InputDevice, OutputDevice, Hal};
 
 #[aoc_generator(day11)]
 pub fn generator(input: &str) -> Vec<isize> {
@@ -381,7 +381,7 @@ impl OutputDevice for Hull {
         }
     }
 }
-
+impl Hal for Hull {}
 
 #[aoc(day11, part1)]
 pub fn part1(input: &Vec<isize>) -> usize {

@@ -92,6 +92,7 @@ impl Op {
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct Computer {
     memory: Vec<isize>,
     instruction_pointer: usize,
@@ -128,20 +129,18 @@ impl Computer {
     }
 
     pub async fn execute(&mut self, hal: &mut (impl Hal + Send)) -> () {
-        loop {
-            loop {
-                //eprintln!("MEM: {:?}", memory);
+        while hal.powered() {
+            //eprintln!("MEM: {:?}", memory);
 
-                // decode + advance instruction pointer
-                let op = Op::decode(&self.memory, &mut self.instruction_pointer);
-                self.instr_cycles += 1;
-                //eprintln!(" OP: {:?}", op);
-                if op == Op::Halt {
-                    return;
-                }
-
-                self.step(&op, hal).await;
+            // decode + advance instruction pointer
+            let op = Op::decode(&self.memory, &mut self.instruction_pointer);
+            self.instr_cycles += 1;
+            //eprintln!(" OP: {:?}", op);
+            if op == Op::Halt {
+                return;
             }
+
+            self.step(&op, hal).await;
         }
     }
 }
@@ -156,7 +155,9 @@ pub(crate) trait OutputDevice {
     async fn output(&mut self, value: isize) -> ();
 }
 
-pub(crate) trait Hal: InputDevice + OutputDevice {}
+pub(crate) trait Hal: InputDevice + OutputDevice {
+    fn powered(&mut self) -> bool { true }
+}
 
 pub(crate) struct CombinedDevice<I, O> {
     input_device: I,
@@ -168,6 +169,7 @@ impl<I, O> CombinedDevice<I, O> {
         CombinedDevice { input_device, output_device }
     }
 }
+impl<I, O> Hal for CombinedDevice<I,O> where I: InputDevice+Send, O: OutputDevice+Send {}
 
 #[async_trait]
 impl<I, O> InputDevice for CombinedDevice<I, O> where I: InputDevice + Send, O: Send {
@@ -182,8 +184,6 @@ impl<I, O> OutputDevice for CombinedDevice<I, O> where I: Send, O: OutputDevice 
         self.output_device.output(value).await
     }
 }
-
-impl<T> Hal for T where T: InputDevice + OutputDevice {}
 
 #[async_trait]
 impl InputDevice for &[isize] {
@@ -240,4 +240,3 @@ pub(crate) fn wire(capacity: usize) -> (WireInput, WireOutput) {
     let (sender,receiver) = async_std::sync::channel::<isize>(capacity);
     (receiver,sender)
 }
-
