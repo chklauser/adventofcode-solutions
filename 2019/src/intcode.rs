@@ -160,8 +160,8 @@ pub(crate) trait Hal: InputDevice + OutputDevice {
 }
 
 pub(crate) struct CombinedDevice<I, O> {
-    input_device: I,
-    output_device: O,
+    pub input_device: I,
+    pub output_device: O,
 }
 
 impl<I, O> CombinedDevice<I, O> {
